@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Optimizer | v1.5 Final</title>
+    <title>Base Optimizer | v1.6 Master</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -19,19 +19,19 @@
         .btn-primary { background: var(--primary); color: #fff; width: 100%; margin-top: 10px; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
         .btn-outline:hover { border-color: var(--primary); color: #fff; }
-        .log-area { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--success); height: 280px; overflow-y: auto; margin-top: 15px; }
+        .log-area { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--success); height: 320px; overflow-y: auto; margin-top: 15px; }
         .stat-item { background: #000; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); margin-bottom: 10px; }
         .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--primary); display: block; }
         .balance-box { background: #111; padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--primary); margin-top: 8px; }
         .balance-label { font-size: 0.6rem; color: var(--text-dim); display: block; }
         .balance-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo">BASE <span>TX TOOL v1.5</span></div>
+    <div class="logo">BASE <span>TX TOOL v1.6</span></div>
     <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
 </nav>
 
@@ -45,8 +45,9 @@
                 </div>
                 <h4 style="font-size: 0.7rem; color: var(--text-dim); margin: 15px 0 5px 0;">BALANCES</h4>
                 <div class="balance-box"><span class="balance-label">ETH</span><span id="ethBal" class="balance-val">0.00000</span></div>
-                <div class="balance-box" style="border-left-color: #success;"><span class="balance-label">WETH</span><span id="wethBal" class="balance-val">0.00000</span></div>
+                <div class="balance-box" style="border-left-color: #00ff88;"><span class="balance-label">WETH</span><span id="wethBal" class="balance-val">0.00000</span></div>
                 <div class="balance-box" style="border-left-color: #27AD75;"><span class="balance-label">USDC</span><span id="usdcBal" class="balance-val">0.00</span></div>
+                <button class="btn btn-outline" style="width:100%; margin-top:15px; font-size:0.6rem" onclick="updateStats()">🔄 REFRESH BALANCES</button>
             </div>
         </div>
 
@@ -58,12 +59,12 @@
                     <button class="btn btn-outline" onclick="uniSwapWETH()">🦄 SWAP WETH</button>
                     <button class="btn btn-outline" onclick="uniSwapUSDC()">💵 SWAP USDC</button>
                     <button class="btn btn-outline" onclick="unwraper()">📥 UNWRAP WETH</button>
-                    <button class="btn btn-outline" style="color:#ff3e3e" onclick="log('Manual Swap USDC back to ETH via Uniswap App')">⚠️ EXIT USDC</button>
+                    <button class="btn btn-outline" style="color:#ff3e3e" onclick="log('Manual: Use Uniswap to exit USDC')">⚠️ EXIT USDC</button>
                 </div>
                 
                 <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e; font-size: 1rem; padding: 15px;" onclick="toggleLoop()">⚡ START FULL AUTOMATION</button>
                 
-                <div class="log-area" id="logs">READY. CONNECT WALLET...</div>
+                <div class="log-area" id="logs">SYSTEM READY...</div>
             </div>
         </div>
     </div>
@@ -79,37 +80,35 @@
     };
 
     let signer, provider, userAddr, isLooping = false;
-    const SWAP_AMOUNT_ETH = "0.00006"; // Approx $0.20
+    const SWAP_AMOUNT_ETH = "0.00006"; 
 
     async function init() {
-        if (!window.ethereum) return;
+        if (!window.ethereum) return alert("Install MetaMask");
         provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         userAddr = await signer.getAddress();
         document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"...";
         updateStats();
-        setInterval(updateStats, 10000);
-        log("Wallet Linked.");
+        setInterval(updateStats, 15000);
+        log("Wallet Connected: " + userAddr);
     }
 
     async function updateStats() {
         if(!userAddr) return;
-        const count = await provider.getTransactionCount(userAddr);
-        document.getElementById("totalTxs").innerText = count;
-        
-        const eth = await provider.getBalance(userAddr);
-        document.getElementById("ethBal").innerText = parseFloat(ethers.utils.formatEther(eth)).toFixed(5);
-        
-        const abi = ["function balanceOf(address) view returns (uint256)"];
-        const wethC = new ethers.Contract(ADDR.WETH, abi, provider);
-        const usdcC = new ethers.Contract(ADDR.USDC, abi, provider);
-        
-        const wethB = await wethC.balanceOf(userAddr);
-        const usdcB = await usdcC.balanceOf(userAddr);
-        
-        document.getElementById("wethBal").innerText = parseFloat(ethers.utils.formatEther(wethB)).toFixed(5);
-        document.getElementById("usdcBal").innerText = (usdcB / 1e6).toFixed(2);
+        try {
+            const count = await provider.getTransactionCount(userAddr);
+            document.getElementById("totalTxs").innerText = count;
+            const eth = await provider.getBalance(userAddr);
+            document.getElementById("ethBal").innerText = parseFloat(ethers.utils.formatEther(eth)).toFixed(5);
+            const abi = ["function balanceOf(address) view returns (uint256)"];
+            const wethC = new ethers.Contract(ADDR.WETH, abi, provider);
+            const usdcC = new ethers.Contract(ADDR.USDC, abi, provider);
+            const wB = await wethC.balanceOf(userAddr);
+            const uB = await usdcC.balanceOf(userAddr);
+            document.getElementById("wethBal").innerText = parseFloat(ethers.utils.formatEther(wB)).toFixed(5);
+            document.getElementById("usdcBal").innerText = (uB / 1e6).toFixed(2);
+        } catch(e) { console.error(e); }
     }
 
     function log(m) {
@@ -122,36 +121,44 @@
         try {
             const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
             const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
-            const tx = await router.execute("0x0b", [ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [ADDR.UNI_ROUTER, val])], Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 150000 });
-            log("Uni: Wrapping ETH..."); await tx.wait(); log("Uni: Wrap OK."); updateStats();
-        } catch(e) { log("Swap WETH Err."); }
+            // 0x0b = Wrap, 0x04 = Sweep (Sends WETH from Router to User)
+            const commands = "0x0b04";
+            const inputs = [
+                ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [ADDR.UNI_ROUTER, val]),
+                ethers.utils.defaultAbiCoder.encode(["address", "address", "uint256"], [ADDR.WETH, userAddr, val])
+            ];
+            const tx = await router.execute(commands, inputs, Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 250000 });
+            log("Uni: Wrap + Sweep Sent...");
+            await tx.wait(); log("Uni: WETH Received!"); updateStats();
+        } catch(e) { log("Uni WETH Err: " + (e.reason || "Check Gas")); }
     }
 
     async function uniSwapUSDC() {
         try {
             const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
             const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
-            // V3 Swap Exact Input: Path [ETH -> USDC], Fee 500
+            const commands = "0x00"; // V3_SWAP_EXACT_IN
             const path = ethers.utils.solidityPack(["address", "uint24", "address"], [ADDR.WETH, 500, ADDR.USDC]);
             const inputs = [
                 ethers.utils.defaultAbiCoder.encode(["address", "uint256", "uint256", "bytes", "bool"], [userAddr, val, 0, path, true])
             ];
-            const tx = await router.execute("0x00", inputs, Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 250000 });
-            log("Uni: Swapping ETH to USDC..."); await tx.wait(); log("Uni: USDC OK."); updateStats();
-        } catch(e) { log("Swap USDC Err."); console.log(e); }
+            const tx = await router.execute(commands, inputs, Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 300000 });
+            log("Uni: Swap to USDC Sent...");
+            await tx.wait(); log("Uni: USDC Received!"); updateStats();
+        } catch(e) { log("Uni USDC Err."); }
     }
 
     async function poker() {
         try {
-            const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke({ gasLimit: 80000 });
-            log("Poke Sent..."); await tx.wait(); log("Poke OK."); updateStats();
+            const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke({ gasLimit: 100000 });
+            log("Poke Sent..."); await tx.wait(); log("Poke Success!"); updateStats();
         } catch(e) { log("Poke Err."); }
     }
 
     async function minter() {
         try {
-            const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint({ gasLimit: 160000 });
-            log("Mint Sent..."); await tx.wait(); log("Mint OK."); updateStats();
+            const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint({ gasLimit: 180000 });
+            log("Mint Sent..."); await tx.wait(); log("Mint Success!"); updateStats();
         } catch(e) { log("Mint Err."); }
     }
 
@@ -159,25 +166,28 @@
         try {
             const c = new ethers.Contract(ADDR.WETH, ["function withdraw(uint256 wad)", "function balanceOf(address) view returns (uint256)"], signer);
             const bal = await c.balanceOf(userAddr);
-            if(bal.eq(0)) return log("No WETH.");
+            if(bal.eq(0)) return log("No WETH to unwrap.");
             const tx = await c.withdraw(bal, { gasLimit: 120000 });
-            log("Unwrap Sent..."); await tx.wait(); log("Unwrap OK."); updateStats();
+            log("Unwrap Sent..."); await tx.wait(); log("Unwrap Success!"); updateStats();
         } catch(e) { log("Unwrap Err."); }
     }
 
     async function toggleLoop() {
-        if(!signer) return;
+        if(!signer) return log("Connect Wallet!");
         isLooping = !isLooping;
-        document.getElementById("loopBtn").innerText = isLooping ? "🛑 STOP" : "⚡ START FULL AUTOMATION";
+        const btn = document.getElementById("loopBtn");
+        btn.innerText = isLooping ? "🛑 STOP AUTOMATION" : "⚡ START FULL AUTOMATION";
+        btn.style.background = isLooping ? "#444" : "#ff3e3e";
         if(isLooping) runLoop();
     }
 
     async function runLoop() {
         if(!isLooping) return;
         const acts = [poker, minter, uniSwapWETH, uniSwapUSDC, unwraper];
-        await acts[Math.floor(Math.random()*acts.length)]();
-        const delay = Math.floor(Math.random() * 20000) + 15000;
-        log(`Next in ${Math.round(delay/1000)}s...`);
+        const randomAct = acts[Math.floor(Math.random()*acts.length)];
+        await randomAct();
+        const delay = Math.floor(Math.random() * 25000) + 15000;
+        log(`Next action in ${Math.round(delay/1000)}s...`);
         setTimeout(runLoop, delay);
     }
 </script>
