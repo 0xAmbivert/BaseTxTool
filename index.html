@@ -3,65 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Optimizer | v1.0</title>
+    <title>Base Optimizer | Fixed v1.1</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #050505; --card: #0f0f0f; --border: #1f1f1f; --primary: #0052FF;
-            --success: #00ff88; --text: #ffffff; --text-dim: #888;
-        }
+        :root { --bg: #050505; --card: #0f0f0f; --border: #1f1f1f; --primary: #0052FF; --success: #00ff88; --text: #ffffff; --text-dim: #888; }
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 60px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .logo { font-weight: 900; font-size: 1.2rem; }
         .logo span { color: var(--primary); }
-        .nav-controls { display: flex; gap: 10px; align-items: center; }
-        .address-input { background: #111; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 12px; font-size: 0.8rem; width: 220px; outline: none; }
         main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; width: 100%; }
-        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 25px; }
-        .btn { padding: 12px 24px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
-        .btn-primary { background: var(--primary); color: #fff; width: 100%; margin-bottom: 10px; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); width: 100%; margin-bottom: 10px; }
-        .btn-outline:hover { border-color: #555; color: #fff; }
-        .log-area { background: #000; border: 1px solid var(--border); border-radius: 15px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--success); height: 300px; overflow-y: auto; }
-        .stat-item { background: #000; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--primary); display: block; }
+        .dashboard-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; width: 100%; }
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
+        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn-primary { background: var(--primary); color: #fff; width: 100%; margin-top: 10px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); width: 100%; }
+        .log-area { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--success); height: 250px; overflow-y: auto; margin-top: 15px; }
+        .stat-item { background: #000; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo">BASE <span>TX TOOL</span></div>
-    <div class="nav-controls">
-        <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
-    </div>
+    <div class="logo">BASE <span>TX TOOL v1.1</span></div>
+    <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
 </nav>
 
 <main>
-    <div id="ui" class="dashboard-grid">
+    <div class="dashboard-grid">
         <div class="left-col">
             <div class="panel">
-                <h4 style="margin-top:0; color:var(--text-dim)">WALLET STATS</h4>
                 <div class="stat-item">
-                    <span class="stat-val" id="totalTxs">0</span>
-                    <span style="font-size: 0.6rem;">ON-CHAIN TXS</span>
+                    <span style="font-size: 0.6rem; color: var(--text-dim);">TX COUNT</span>
+                    <span class="stat-val" id="totalTxs" style="font-size: 1.5rem; display:block; color:var(--primary)">0</span>
                 </div>
+                <button class="btn btn-primary" onclick="switchNetwork()">Switch to Base</button>
             </div>
         </div>
 
         <div class="right-col">
             <div class="panel">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                     <button class="btn btn-outline" onclick="poker()">🧪 POKE</button>
-                    <button class="btn btn-outline" onclick="minter()">✨ MINT NFT</button>
-                    <button class="btn btn-outline" onclick="wraper()">📥 WRAP ETH</button>
+                    <button class="btn btn-outline" onclick="minter()">✨ MINT</button>
+                    <button class="btn btn-outline" onclick="wraper()">📥 WRAP</button>
                 </div>
-
-                <button id="loopBtn" class="btn btn-primary" onclick="toggleLoop()">⚡ START AUTO LOOP (2-7S)</button>
-
-                <h4 style="margin: 25px 0 10px 0; font-size: 0.7rem; color: var(--text-dim);">TERMINAL</h4>
-                <div class="log-area" id="logs">READY ON BASE MAINNET...</div>
+                <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e" onclick="toggleLoop()">START AUTOMATION</button>
+                <div class="log-area" id="logs">TERMINAL READY. CONNECT WALLET...</div>
             </div>
         </div>
     </div>
@@ -74,21 +62,51 @@
         WETH: "0x4200000000000000000000000000000000000006"
     };
 
-    let signer, provider, userAddr, isLooping = false;
+    const BASE_CHAIN_ID = '0x2105'; // 8453 in hex
+
+    let signer, provider, isLooping = false;
+
+    async function switchNetwork() {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: BASE_CHAIN_ID }],
+            });
+        } catch (e) {
+            if (e.code === 4902) {
+                log("Base not found in wallet. Please add it manually.");
+            }
+        }
+    }
 
     async function init() {
-        if (!window.ethereum) return alert("Install MetaMask");
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        userAddr = await signer.getAddress();
-        document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"..."+userAddr.slice(-4);
-        log("Connected: " + userAddr);
-        updateStats();
+        if (!window.ethereum) return alert("Please install MetaMask");
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            
+            const { chainId } = await provider.getNetwork();
+            if (chainId !== 8453) {
+                log("Wrong Network! Switching to Base...");
+                await switchNetwork();
+                // Refresh provider after switch
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+            }
+
+            signer = provider.getSigner();
+            const addr = await signer.getAddress();
+            document.getElementById("connBtn").innerText = addr.slice(0,6)+"...";
+            log("Connected to Base: " + addr);
+            updateStats();
+        } catch (err) {
+            log("Connection Error: " + err.message);
+        }
     }
 
     async function updateStats() {
-        const count = await provider.getTransactionCount(userAddr);
+        if(!signer) return;
+        const addr = await signer.getAddress();
+        const count = await provider.getTransactionCount(addr);
         document.getElementById("totalTxs").innerText = count;
     }
 
@@ -99,37 +117,60 @@
     }
 
     async function poker() {
+        if(!signer) return log("Connect Wallet First!");
         try {
-            const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke();
-            log("Poke sent..."); await tx.wait(); log("Poke Success!"); updateStats();
-        } catch(e) { log("Poke Error"); }
+            const contract = new ethers.Contract(ADDR.POKE, ["function poke()"], signer);
+            const tx = await contract.poke({ gasLimit: 100000 });
+            log("Poke TX Sent...");
+            await tx.wait();
+            log("Poke Success!");
+            updateStats();
+        } catch(e) { log("Poke Failed: " + e.reason || e.message); }
     }
 
     async function minter() {
+        if(!signer) return log("Connect Wallet First!");
         try {
-            const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint();
-            log("Minting NFT..."); await tx.wait(); log("Mint Success!"); updateStats();
-        } catch(e) { log("Mint Error"); }
+            const contract = new ethers.Contract(ADDR.NFT, ["function mint()"], signer);
+            const tx = await contract.mint({ gasLimit: 150000 });
+            log("Mint TX Sent...");
+            await tx.wait();
+            log("Mint Success!");
+            updateStats();
+        } catch(e) { log("Mint Failed: " + e.reason || e.message); }
     }
 
     async function wraper() {
+        if(!signer) return log("Connect Wallet First!");
         try {
-            const tx = await new ethers.Contract(ADDR.WETH, ["function deposit() payable"], signer).deposit({ value: ethers.utils.parseUnits("0.0001", "ether") });
-            log("Wrapping ETH..."); await tx.wait(); log("Wrap Success!"); updateStats();
-        } catch(e) { log("Wrap Error"); }
+            const contract = new ethers.Contract(ADDR.WETH, ["function deposit() payable"], signer);
+            const tx = await contract.deposit({ 
+                value: ethers.utils.parseUnits("0.0001", "ether"),
+                gasLimit: 100000 
+            });
+            log("Wrap TX Sent...");
+            await tx.wait();
+            log("Wrap Success!");
+            updateStats();
+        } catch(e) { log("Wrap Failed: " + e.reason || e.message); }
     }
 
     async function toggleLoop() {
+        if(!signer) return log("Connect Wallet First!");
         isLooping = !isLooping;
-        document.getElementById("loopBtn").innerText = isLooping ? "🛑 STOP LOOP" : "⚡ START AUTO LOOP";
+        document.getElementById("loopBtn").innerText = isLooping ? "STOP AUTOMATION" : "START AUTOMATION";
+        document.getElementById("loopBtn").style.background = isLooping ? "#555" : "#ff3e3e";
         if(isLooping) runLoop();
     }
 
     async function runLoop() {
         if(!isLooping) return;
         const tasks = [poker, minter, wraper];
-        await tasks[Math.floor(Math.random()*tasks.length)]();
-        setTimeout(runLoop, Math.random()*5000 + 2000);
+        const randomTask = tasks[Math.floor(Math.random()*tasks.length)];
+        await randomTask();
+        // Delay between 10 to 30 seconds for safety
+        const delay = Math.floor(Math.random() * 20000) + 10000;
+        setTimeout(runLoop, delay);
     }
 </script>
 </body>
