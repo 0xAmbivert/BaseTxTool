@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Optimizer | v1.2</title>
+    <title>Base Optimizer | v1.3</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -13,7 +13,7 @@
         .logo { font-weight: 900; font-size: 1.2rem; }
         .logo span { color: var(--primary); }
         main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .dashboard-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; width: 100%; }
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; width: 100%; }
         .panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
         .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
         .btn-primary { background: var(--primary); color: #fff; width: 100%; margin-top: 10px; }
@@ -21,14 +21,17 @@
         .btn-outline:hover { border-color: var(--primary); color: #fff; }
         .log-area { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--success); height: 280px; overflow-y: auto; margin-top: 15px; }
         .stat-item { background: #000; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); margin-bottom: 10px; }
-        .stat-val { font-size: 1.8rem; font-weight: 900; color: var(--primary); display: block; }
+        .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--primary); display: block; }
+        .balance-box { background: #111; padding: 10px 15px; border-radius: 10px; border-left: 4px solid var(--primary); margin-top: 10px; }
+        .balance-label { font-size: 0.65rem; color: var(--text-dim); display: block; text-transform: uppercase; }
+        .balance-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #fff; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo">BASE <span>TX TOOL v1.2</span></div>
+    <div class="logo">BASE <span>TX TOOL v1.3</span></div>
     <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
 </nav>
 
@@ -40,7 +43,18 @@
                     <span style="font-size: 0.6rem; color: var(--text-dim); letter-spacing: 1px;">TOTAL TRANSACTIONS</span>
                     <span class="stat-val" id="totalTxs">0</span>
                 </div>
-                <button class="btn btn-outline" style="width:100%" onclick="switchNetwork()">📍 Switch to Base</button>
+                
+                <h4 style="font-size: 0.7rem; color: var(--text-dim); margin: 20px 0 10px 0;">LIVE BALANCES</h4>
+                <div class="balance-box">
+                    <span class="balance-label">Native ETH</span>
+                    <span id="ethBal" class="balance-val">0.0000 ETH</span>
+                </div>
+                <div class="balance-box" style="border-left-color: var(--success);">
+                    <span class="balance-label">Wrapped WETH</span>
+                    <span id="wethBal" class="balance-val">0.0000 WETH</span>
+                </div>
+
+                <button class="btn btn-outline" style="width:100%; margin-top: 20px;" onclick="switchNetwork()">📍 Switch to Base</button>
             </div>
         </div>
 
@@ -55,7 +69,7 @@
                 
                 <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e; font-size: 1rem; padding: 15px;" onclick="toggleLoop()">⚡ START AUTOMATION LOOP</button>
                 
-                <div class="log-area" id="logs">SYSTEM READY. PLEASE CONNECT WALLET TO BEGIN...</div>
+                <div class="log-area" id="logs">SYSTEM READY. PLEASE CONNECT WALLET...</div>
             </div>
         </div>
     </div>
@@ -78,34 +92,46 @@
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: BASE_CHAIN_ID }],
             });
-        } catch (e) {
-            if (e.code === 4902) log("Error: Add Base Mainnet to MetaMask.");
-        }
+        } catch (e) { log("Error adding Base Network."); }
     }
 
     async function init() {
-        if (!window.ethereum) return alert("MetaMask not found!");
+        if (!window.ethereum) return alert("Install MetaMask!");
         try {
             provider = new ethers.providers.Web3Provider(window.ethereum);
             await provider.send("eth_requestAccounts", []);
             const { chainId } = await provider.getNetwork();
             if (chainId !== 8453) {
-                log("Wrong Network! Switching...");
                 await switchNetwork();
                 provider = new ethers.providers.Web3Provider(window.ethereum);
             }
             signer = provider.getSigner();
             userAddr = await signer.getAddress();
             document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"..."+userAddr.slice(-4);
-            log("Connected to Base: " + userAddr);
+            log("Connected: " + userAddr);
+            
+            // Initial update and start auto-refresh
             updateStats();
-        } catch (err) { log("Connection Error: " + err.message); }
+            setInterval(updateStats, 5000); // Auto-refresh every 5 seconds
+        } catch (err) { log("Init Error: " + err.message); }
     }
 
     async function updateStats() {
         if(!userAddr) return;
-        const count = await provider.getTransactionCount(userAddr);
-        document.getElementById("totalTxs").innerText = count;
+        try {
+            // 1. Get Tx Count
+            const count = await provider.getTransactionCount(userAddr);
+            document.getElementById("totalTxs").innerText = count;
+
+            // 2. Get Native ETH Balance
+            const ethBal = await provider.getBalance(userAddr);
+            document.getElementById("ethBal").innerText = parseFloat(ethers.utils.formatEther(ethBal)).toFixed(4) + " ETH";
+
+            // 3. Get WETH Balance
+            const wethContract = new ethers.Contract(ADDR.WETH, ["function balanceOf(address) view returns (uint256)"], provider);
+            const wethBal = await wethContract.balanceOf(userAddr);
+            document.getElementById("wethBal").innerText = parseFloat(ethers.utils.formatEther(wethBal)).toFixed(4) + " WETH";
+        } catch (e) { console.error("Update error", e); }
     }
 
     function log(m) {
@@ -114,6 +140,7 @@
         l.scrollTop = l.scrollHeight;
     }
 
+    // --- Action Functions ---
     async function poker() {
         if(!signer) return log("Connect Wallet!");
         try {
@@ -134,8 +161,7 @@
         if(!signer) return log("Connect Wallet!");
         try {
             const tx = await new ethers.Contract(ADDR.WETH, ["function deposit() payable"], signer).deposit({ 
-                value: ethers.utils.parseUnits("0.0001", "ether"), 
-                gasLimit: 100000 
+                value: ethers.utils.parseUnits("0.0001", "ether"), gasLimit: 100000 
             });
             log("Wrapping 0.0001 ETH..."); await tx.wait(); log("Wrap Success!"); updateStats();
         } catch(e) { log("Wrap Failed."); }
@@ -148,12 +174,12 @@
             const balance = await contract.balanceOf(userAddr);
             if (balance.eq(0)) return log("No WETH to unwrap.");
             const tx = await contract.withdraw(balance, { gasLimit: 100000 });
-            log("Unwrapping all WETH..."); await tx.wait(); log("Unwrap Success!"); updateStats();
+            log("Unwrapping WETH..."); await tx.wait(); log("Unwrap Success!"); updateStats();
         } catch(e) { log("Unwrap Failed."); }
     }
 
     async function toggleLoop() {
-        if(!signer) return log("Connect Wallet!");
+        if(!signer) return log("Connect Wallet First!");
         isLooping = !isLooping;
         const btn = document.getElementById("loopBtn");
         btn.innerText = isLooping ? "🛑 STOP AUTOMATION" : "⚡ START AUTOMATION LOOP";
@@ -166,7 +192,7 @@
         const tasks = [poker, minter, wraper, unwraper];
         const randomTask = tasks[Math.floor(Math.random()*tasks.length)];
         await randomTask();
-        const delay = Math.floor(Math.random() * 20000) + 10000; // 10-30s delay
+        const delay = Math.floor(Math.random() * 20000) + 10000; 
         log(`Next action in ${Math.round(delay/1000)}s...`);
         setTimeout(runLoop, delay);
     }
