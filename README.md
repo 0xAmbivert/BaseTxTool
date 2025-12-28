@@ -1,2 +1,2 @@
 # BaseTxTool
-a tool to Burn Fee and Do Tx on Base
+# A tool to Burn Fee and Do Tx on Base
