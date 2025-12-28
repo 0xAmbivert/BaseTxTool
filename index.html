@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Optimizer | v1.6 Master</title>
+    <title>Base Optimizer | v1.7 Master</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -31,7 +31,7 @@
 <body>
 
 <nav>
-    <div class="logo">BASE <span>TX TOOL v1.6</span></div>
+    <div class="logo">BASE <span>TX TOOL v1.7</span></div>
     <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
 </nav>
 
@@ -59,7 +59,7 @@
                     <button class="btn btn-outline" onclick="uniSwapWETH()">🦄 SWAP WETH</button>
                     <button class="btn btn-outline" onclick="uniSwapUSDC()">💵 SWAP USDC</button>
                     <button class="btn btn-outline" onclick="unwraper()">📥 UNWRAP WETH</button>
-                    <button class="btn btn-outline" style="color:#ff3e3e" onclick="log('Manual: Use Uniswap to exit USDC')">⚠️ EXIT USDC</button>
+                    <button class="btn btn-outline" style="border-color:#ff9800; color:#ff9800" onclick="recoverySweep()">🩹 RECOVER STUCK ETH</button>
                 </div>
                 
                 <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e; font-size: 1rem; padding: 15px;" onclick="toggleLoop()">⚡ START FULL AUTOMATION</button>
@@ -91,7 +91,7 @@
         document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"...";
         updateStats();
         setInterval(updateStats, 15000);
-        log("Wallet Connected: " + userAddr);
+        log("Wallet Connected.");
     }
 
     async function updateStats() {
@@ -117,11 +117,26 @@
         l.scrollTop = l.scrollHeight;
     }
 
+    async function recoverySweep() {
+        if(!signer) return log("Connect Wallet!");
+        try {
+            const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
+            log("Checking for stuck WETH in Router...");
+            const commands = "0x04"; // Command for SWEEP_TOKEN
+            const inputs = [
+                ethers.utils.defaultAbiCoder.encode(["address", "address", "uint256"], [ADDR.WETH, userAddr, 0])
+            ];
+            const tx = await router.execute(commands, inputs, Math.floor(Date.now()/1000)+600, { gasLimit: 150000 });
+            await tx.wait();
+            log("Recovery Success! Check WETH balance.");
+            updateStats();
+        } catch(e) { log("Recovery: No stuck funds found or Tx denied."); }
+    }
+
     async function uniSwapWETH() {
         try {
             const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
             const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
-            // 0x0b = Wrap, 0x04 = Sweep (Sends WETH from Router to User)
             const commands = "0x0b04";
             const inputs = [
                 ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [ADDR.UNI_ROUTER, val]),
@@ -130,14 +145,14 @@
             const tx = await router.execute(commands, inputs, Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 250000 });
             log("Uni: Wrap + Sweep Sent...");
             await tx.wait(); log("Uni: WETH Received!"); updateStats();
-        } catch(e) { log("Uni WETH Err: " + (e.reason || "Check Gas")); }
+        } catch(e) { log("Uni WETH Err."); }
     }
 
     async function uniSwapUSDC() {
         try {
             const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
             const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
-            const commands = "0x00"; // V3_SWAP_EXACT_IN
+            const commands = "0x00"; 
             const path = ethers.utils.solidityPack(["address", "uint24", "address"], [ADDR.WETH, 500, ADDR.USDC]);
             const inputs = [
                 ethers.utils.defaultAbiCoder.encode(["address", "uint256", "uint256", "bytes", "bool"], [userAddr, val, 0, path, true])
@@ -151,14 +166,14 @@
     async function poker() {
         try {
             const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke({ gasLimit: 100000 });
-            log("Poke Sent..."); await tx.wait(); log("Poke Success!"); updateStats();
+            log("Poke Sent..."); await tx.wait(); log("Poke OK."); updateStats();
         } catch(e) { log("Poke Err."); }
     }
 
     async function minter() {
         try {
             const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint({ gasLimit: 180000 });
-            log("Mint Sent..."); await tx.wait(); log("Mint Success!"); updateStats();
+            log("Mint Sent..."); await tx.wait(); log("Mint OK."); updateStats();
         } catch(e) { log("Mint Err."); }
     }
 
@@ -166,17 +181,17 @@
         try {
             const c = new ethers.Contract(ADDR.WETH, ["function withdraw(uint256 wad)", "function balanceOf(address) view returns (uint256)"], signer);
             const bal = await c.balanceOf(userAddr);
-            if(bal.eq(0)) return log("No WETH to unwrap.");
+            if(bal.eq(0)) return log("No WETH.");
             const tx = await c.withdraw(bal, { gasLimit: 120000 });
-            log("Unwrap Sent..."); await tx.wait(); log("Unwrap Success!"); updateStats();
+            log("Unwrap Sent..."); await tx.wait(); log("Unwrap OK."); updateStats();
         } catch(e) { log("Unwrap Err."); }
     }
 
     async function toggleLoop() {
-        if(!signer) return log("Connect Wallet!");
+        if(!signer) return;
         isLooping = !isLooping;
         const btn = document.getElementById("loopBtn");
-        btn.innerText = isLooping ? "🛑 STOP AUTOMATION" : "⚡ START FULL AUTOMATION";
+        btn.innerText = isLooping ? "🛑 STOP" : "⚡ START FULL AUTOMATION";
         btn.style.background = isLooping ? "#444" : "#ff3e3e";
         if(isLooping) runLoop();
     }
@@ -184,8 +199,7 @@
     async function runLoop() {
         if(!isLooping) return;
         const acts = [poker, minter, uniSwapWETH, uniSwapUSDC, unwraper];
-        const randomAct = acts[Math.floor(Math.random()*acts.length)];
-        await randomAct();
+        await acts[Math.floor(Math.random()*acts.length)]();
         const delay = Math.floor(Math.random() * 25000) + 15000;
         log(`Next action in ${Math.round(delay/1000)}s...`);
         setTimeout(runLoop, delay);
