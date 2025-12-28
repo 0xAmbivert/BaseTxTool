@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Optimizer | v1.3</title>
+    <title>Base Optimizer | v1.5 Final</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -15,23 +15,23 @@
         main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
         .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; width: 100%; }
         .panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
-        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.8rem; }
         .btn-primary { background: var(--primary); color: #fff; width: 100%; margin-top: 10px; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
         .btn-outline:hover { border-color: var(--primary); color: #fff; }
         .log-area { background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--success); height: 280px; overflow-y: auto; margin-top: 15px; }
         .stat-item { background: #000; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); margin-bottom: 10px; }
         .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--primary); display: block; }
-        .balance-box { background: #111; padding: 10px 15px; border-radius: 10px; border-left: 4px solid var(--primary); margin-top: 10px; }
-        .balance-label { font-size: 0.65rem; color: var(--text-dim); display: block; text-transform: uppercase; }
-        .balance-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #fff; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .balance-box { background: #111; padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--primary); margin-top: 8px; }
+        .balance-label { font-size: 0.6rem; color: var(--text-dim); display: block; }
+        .balance-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo">BASE <span>TX TOOL v1.3</span></div>
+    <div class="logo">BASE <span>TX TOOL v1.5</span></div>
     <button id="connBtn" class="btn" style="background:#fff; color:#000" onclick="init()">Connect Wallet</button>
 </nav>
 
@@ -40,21 +40,13 @@
         <div class="left-col">
             <div class="panel">
                 <div class="stat-item">
-                    <span style="font-size: 0.6rem; color: var(--text-dim); letter-spacing: 1px;">TOTAL TRANSACTIONS</span>
+                    <span style="font-size: 0.6rem; color: var(--text-dim);">TX COUNT</span>
                     <span class="stat-val" id="totalTxs">0</span>
                 </div>
-                
-                <h4 style="font-size: 0.7rem; color: var(--text-dim); margin: 20px 0 10px 0;">LIVE BALANCES</h4>
-                <div class="balance-box">
-                    <span class="balance-label">Native ETH</span>
-                    <span id="ethBal" class="balance-val">0.0000 ETH</span>
-                </div>
-                <div class="balance-box" style="border-left-color: var(--success);">
-                    <span class="balance-label">Wrapped WETH</span>
-                    <span id="wethBal" class="balance-val">0.0000 WETH</span>
-                </div>
-
-                <button class="btn btn-outline" style="width:100%; margin-top: 20px;" onclick="switchNetwork()">📍 Switch to Base</button>
+                <h4 style="font-size: 0.7rem; color: var(--text-dim); margin: 15px 0 5px 0;">BALANCES</h4>
+                <div class="balance-box"><span class="balance-label">ETH</span><span id="ethBal" class="balance-val">0.00000</span></div>
+                <div class="balance-box" style="border-left-color: #success;"><span class="balance-label">WETH</span><span id="wethBal" class="balance-val">0.00000</span></div>
+                <div class="balance-box" style="border-left-color: #27AD75;"><span class="balance-label">USDC</span><span id="usdcBal" class="balance-val">0.00</span></div>
             </div>
         </div>
 
@@ -63,13 +55,15 @@
                 <div class="action-grid">
                     <button class="btn btn-outline" onclick="poker()">🧪 POKE</button>
                     <button class="btn btn-outline" onclick="minter()">✨ MINT NFT</button>
-                    <button class="btn btn-outline" onclick="wraper()">📥 WRAP ETH</button>
-                    <button class="btn btn-outline" onclick="unwraper()">📤 UNWRAP ALL</button>
+                    <button class="btn btn-outline" onclick="uniSwapWETH()">🦄 SWAP WETH</button>
+                    <button class="btn btn-outline" onclick="uniSwapUSDC()">💵 SWAP USDC</button>
+                    <button class="btn btn-outline" onclick="unwraper()">📥 UNWRAP WETH</button>
+                    <button class="btn btn-outline" style="color:#ff3e3e" onclick="log('Manual Swap USDC back to ETH via Uniswap App')">⚠️ EXIT USDC</button>
                 </div>
                 
-                <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e; font-size: 1rem; padding: 15px;" onclick="toggleLoop()">⚡ START AUTOMATION LOOP</button>
+                <button id="loopBtn" class="btn btn-primary" style="background:#ff3e3e; font-size: 1rem; padding: 15px;" onclick="toggleLoop()">⚡ START FULL AUTOMATION</button>
                 
-                <div class="log-area" id="logs">SYSTEM READY. PLEASE CONNECT WALLET...</div>
+                <div class="log-area" id="logs">READY. CONNECT WALLET...</div>
             </div>
         </div>
     </div>
@@ -79,59 +73,43 @@
     const ADDR = {
         POKE: "0x523D03821D4D511dFA9beD1ee48Ed75b96cfC4d0",
         NFT: "0x830c06b800d21bf39EC2C02639EB9b31D1c3F9ef",
-        WETH: "0x4200000000000000000000000000000000000006"
+        WETH: "0x4200000000000000000000000000000000000006",
+        USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        UNI_ROUTER: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"
     };
 
-    const BASE_CHAIN_ID = '0x2105'; 
-
     let signer, provider, userAddr, isLooping = false;
-
-    async function switchNetwork() {
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: BASE_CHAIN_ID }],
-            });
-        } catch (e) { log("Error adding Base Network."); }
-    }
+    const SWAP_AMOUNT_ETH = "0.00006"; // Approx $0.20
 
     async function init() {
-        if (!window.ethereum) return alert("Install MetaMask!");
-        try {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            const { chainId } = await provider.getNetwork();
-            if (chainId !== 8453) {
-                await switchNetwork();
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-            }
-            signer = provider.getSigner();
-            userAddr = await signer.getAddress();
-            document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"..."+userAddr.slice(-4);
-            log("Connected: " + userAddr);
-            
-            // Initial update and start auto-refresh
-            updateStats();
-            setInterval(updateStats, 5000); // Auto-refresh every 5 seconds
-        } catch (err) { log("Init Error: " + err.message); }
+        if (!window.ethereum) return;
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddr = await signer.getAddress();
+        document.getElementById("connBtn").innerText = userAddr.slice(0,6)+"...";
+        updateStats();
+        setInterval(updateStats, 10000);
+        log("Wallet Linked.");
     }
 
     async function updateStats() {
         if(!userAddr) return;
-        try {
-            // 1. Get Tx Count
-            const count = await provider.getTransactionCount(userAddr);
-            document.getElementById("totalTxs").innerText = count;
-
-            // 2. Get Native ETH Balance
-            const ethBal = await provider.getBalance(userAddr);
-            document.getElementById("ethBal").innerText = parseFloat(ethers.utils.formatEther(ethBal)).toFixed(4) + " ETH";
-
-            // 3. Get WETH Balance
-            const wethContract = new ethers.Contract(ADDR.WETH, ["function balanceOf(address) view returns (uint256)"], provider);
-            const wethBal = await wethContract.balanceOf(userAddr);
-            document.getElementById("wethBal").innerText = parseFloat(ethers.utils.formatEther(wethBal)).toFixed(4) + " WETH";
-        } catch (e) { console.error("Update error", e); }
+        const count = await provider.getTransactionCount(userAddr);
+        document.getElementById("totalTxs").innerText = count;
+        
+        const eth = await provider.getBalance(userAddr);
+        document.getElementById("ethBal").innerText = parseFloat(ethers.utils.formatEther(eth)).toFixed(5);
+        
+        const abi = ["function balanceOf(address) view returns (uint256)"];
+        const wethC = new ethers.Contract(ADDR.WETH, abi, provider);
+        const usdcC = new ethers.Contract(ADDR.USDC, abi, provider);
+        
+        const wethB = await wethC.balanceOf(userAddr);
+        const usdcB = await usdcC.balanceOf(userAddr);
+        
+        document.getElementById("wethBal").innerText = parseFloat(ethers.utils.formatEther(wethB)).toFixed(5);
+        document.getElementById("usdcBal").innerText = (usdcB / 1e6).toFixed(2);
     }
 
     function log(m) {
@@ -140,60 +118,66 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    // --- Action Functions ---
-    async function poker() {
-        if(!signer) return log("Connect Wallet!");
+    async function uniSwapWETH() {
         try {
-            const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke({ gasLimit: 100000 });
-            log("Poke sent..."); await tx.wait(); log("Poke Success!"); updateStats();
-        } catch(e) { log("Poke Failed."); }
+            const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
+            const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
+            const tx = await router.execute("0x0b", [ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [ADDR.UNI_ROUTER, val])], Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 150000 });
+            log("Uni: Wrapping ETH..."); await tx.wait(); log("Uni: Wrap OK."); updateStats();
+        } catch(e) { log("Swap WETH Err."); }
+    }
+
+    async function uniSwapUSDC() {
+        try {
+            const router = new ethers.Contract(ADDR.UNI_ROUTER, ["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"], signer);
+            const val = ethers.utils.parseUnits(SWAP_AMOUNT_ETH, "ether");
+            // V3 Swap Exact Input: Path [ETH -> USDC], Fee 500
+            const path = ethers.utils.solidityPack(["address", "uint24", "address"], [ADDR.WETH, 500, ADDR.USDC]);
+            const inputs = [
+                ethers.utils.defaultAbiCoder.encode(["address", "uint256", "uint256", "bytes", "bool"], [userAddr, val, 0, path, true])
+            ];
+            const tx = await router.execute("0x00", inputs, Math.floor(Date.now()/1000)+600, { value: val, gasLimit: 250000 });
+            log("Uni: Swapping ETH to USDC..."); await tx.wait(); log("Uni: USDC OK."); updateStats();
+        } catch(e) { log("Swap USDC Err."); console.log(e); }
+    }
+
+    async function poker() {
+        try {
+            const tx = await new ethers.Contract(ADDR.POKE, ["function poke()"], signer).poke({ gasLimit: 80000 });
+            log("Poke Sent..."); await tx.wait(); log("Poke OK."); updateStats();
+        } catch(e) { log("Poke Err."); }
     }
 
     async function minter() {
-        if(!signer) return log("Connect Wallet!");
         try {
-            const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint({ gasLimit: 150000 });
-            log("Minting NFT..."); await tx.wait(); log("Mint Success!"); updateStats();
-        } catch(e) { log("Mint Failed."); }
-    }
-
-    async function wraper() {
-        if(!signer) return log("Connect Wallet!");
-        try {
-            const tx = await new ethers.Contract(ADDR.WETH, ["function deposit() payable"], signer).deposit({ 
-                value: ethers.utils.parseUnits("0.0001", "ether"), gasLimit: 100000 
-            });
-            log("Wrapping 0.0001 ETH..."); await tx.wait(); log("Wrap Success!"); updateStats();
-        } catch(e) { log("Wrap Failed."); }
+            const tx = await new ethers.Contract(ADDR.NFT, ["function mint()"], signer).mint({ gasLimit: 160000 });
+            log("Mint Sent..."); await tx.wait(); log("Mint OK."); updateStats();
+        } catch(e) { log("Mint Err."); }
     }
 
     async function unwraper() {
-        if(!signer) return log("Connect Wallet!");
         try {
-            const contract = new ethers.Contract(ADDR.WETH, ["function withdraw(uint256 wad)", "function balanceOf(address) view returns (uint256)"], signer);
-            const balance = await contract.balanceOf(userAddr);
-            if (balance.eq(0)) return log("No WETH to unwrap.");
-            const tx = await contract.withdraw(balance, { gasLimit: 100000 });
-            log("Unwrapping WETH..."); await tx.wait(); log("Unwrap Success!"); updateStats();
-        } catch(e) { log("Unwrap Failed."); }
+            const c = new ethers.Contract(ADDR.WETH, ["function withdraw(uint256 wad)", "function balanceOf(address) view returns (uint256)"], signer);
+            const bal = await c.balanceOf(userAddr);
+            if(bal.eq(0)) return log("No WETH.");
+            const tx = await c.withdraw(bal, { gasLimit: 120000 });
+            log("Unwrap Sent..."); await tx.wait(); log("Unwrap OK."); updateStats();
+        } catch(e) { log("Unwrap Err."); }
     }
 
     async function toggleLoop() {
-        if(!signer) return log("Connect Wallet First!");
+        if(!signer) return;
         isLooping = !isLooping;
-        const btn = document.getElementById("loopBtn");
-        btn.innerText = isLooping ? "🛑 STOP AUTOMATION" : "⚡ START AUTOMATION LOOP";
-        btn.style.background = isLooping ? "#444" : "#ff3e3e";
+        document.getElementById("loopBtn").innerText = isLooping ? "🛑 STOP" : "⚡ START FULL AUTOMATION";
         if(isLooping) runLoop();
     }
 
     async function runLoop() {
         if(!isLooping) return;
-        const tasks = [poker, minter, wraper, unwraper];
-        const randomTask = tasks[Math.floor(Math.random()*tasks.length)];
-        await randomTask();
-        const delay = Math.floor(Math.random() * 20000) + 10000; 
-        log(`Next action in ${Math.round(delay/1000)}s...`);
+        const acts = [poker, minter, uniSwapWETH, uniSwapUSDC, unwraper];
+        await acts[Math.floor(Math.random()*acts.length)]();
+        const delay = Math.floor(Math.random() * 20000) + 15000;
+        log(`Next in ${Math.round(delay/1000)}s...`);
         setTimeout(runLoop, delay);
     }
 </script>
