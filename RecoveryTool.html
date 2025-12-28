@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Base Token Rescue | v1.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        body { background: #0a0a0a; color: #fff; font-family: monospace; padding: 20px; }
+        .box { border: 1px solid #333; padding: 20px; margin-bottom: 10px; border-radius: 8px; }
+        .btn { padding: 10px 20px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .red { background: #ff4444; color: white; }
+        .blue { background: #0052FF; color: white; }
+        .green { background: #00ff88; color: black; }
+        #logs { background: #000; height: 200px; overflow-y: scroll; border: 1px solid #222; padding: 10px; margin-top: 20px; color: #00ff88; }
+    </style>
+</head>
+<body>
+    <h2>🚀 WETH Rescue Dashboard</h2>
+    <button class="btn blue" onclick="connect()">1. CONNECT WALLET</button>
+
+    <div class="box">
+        <strong>Method A: The "Naked Sweep"</strong>
+        <p>Directly asks the Router to send any WETH it owns to your wallet.</p>
+        <button class="btn green" onclick="recoverA()">EXECUTE SWEEP (CMD 0x04)</button>
+    </div>
+
+    <div class="box">
+        <strong>Method B: Force Unwrap</strong>
+        <p>Tells the Router to unwrap its balance and send Native ETH to you.</p>
+        <button class="btn red" onclick="recoverB()">EXECUTE UNWRAP (CMD 0x0c)</button>
+    </div>
+
+    <div id="logs">LOGS: Waiting for connection...</div>
+
+<script>
+    const ADDR = {
+        WETH: "0x4200000000000000000000000000000000000006",
+        ROUTER: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"
+    };
+
+    let signer, userAddr;
+
+    function log(m) {
+        const l = document.getElementById("logs");
+        l.innerHTML += `> ${m}<br>`;
+        l.scrollTop = l.scrollHeight;
+    }
+
+    async function connect() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddr = await signer.getAddress();
+        log("Connected: " + userAddr);
+    }
+
+    // Method A: Sweep the ERC20 WETH directly
+    async function recoverA() {
+        try {
+            const router = new ethers.Contract(ADDR.ROUTER, ["function execute(bytes commands, bytes[] inputs) payable"], signer);
+            const commands = "0x04"; // SWEEP
+            const inputs = [
+                ethers.utils.defaultAbiCoder.encode(["address", "address", "uint256"], [ADDR.WETH, userAddr, 0])
+            ];
+            log("Attempting Sweep...");
+            const tx = await router.execute(commands, inputs, { gasLimit: 150000 });
+            await tx.wait();
+            log("SUCCESS! Check your WETH balance.");
+        } catch(e) { log("FAILED: Router likely empty or MEV bot took it."); }
+    }
+
+    // Method B: Unwrap the ETH inside the router and send to user
+    async function recoverB() {
+        try {
+            const router = new ethers.Contract(ADDR.ROUTER, ["function execute(bytes commands, bytes[] inputs) payable"], signer);
+            const commands = "0x0c"; // UNWRAP_WETH
+            const inputs = [
+                ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [userAddr, 0])
+            ];
+            log("Attempting Force Unwrap...");
+            const tx = await router.execute(commands, inputs, { gasLimit: 150000 });
+            await tx.wait();
+            log("SUCCESS! Check your ETH balance.");
+        } catch(e) { log("FAILED: No ETH to unwrap in Router."); }
+    }
+</script>
+</body>
+</html>
