@@ -4,15 +4,11 @@ import {
   Github, 
   Twitter, 
   ExternalLink, 
-  Cpu, 
-  Globe, 
-  ShieldCheck, 
-  Search, 
-  Zap,
   Terminal,
   ArrowUpRight,
   Fingerprint,
-  Radio
+  Radio,
+  Share2
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -24,6 +20,11 @@ const PROFILE = {
   dob: "30.09",
   traits: ["Shy", "Ambivert", "Nerd"],
   bio: "A systematic researcher deciphering the noise of the decentralized web. I turn complex data into actionable alpha and build resilient digital communities.",
+  socials: {
+    x: "https://x.com/0xAmbivert",
+    farcaster: "https://warpcast.com/ambivert", // Updated to warpcast standard
+    github: "https://github.com/0xAmbivert"
+  }
 };
 
 const DAPPS = [
@@ -76,10 +77,11 @@ export default function App() {
           <Fingerprint className="text-[#bef264]" size={24} />
           <span className="font-black tracking-tighter text-xl uppercase italic">AMBIVERT.SYS</span>
         </div>
-        <div className="flex gap-8 text-[10px] tracking-[0.2em] font-bold uppercase">
-          <a href="#work" className="hover:text-[#bef264] transition-colors">Archive</a>
-          <a href="#lab" className="hover:text-[#bef264] transition-colors">Terminal</a>
-          <a href="https://github.com/0xAmbivert" target="_blank" className="hover:text-[#bef264] transition-colors">GitHub</a>
+        <div className="flex gap-6 text-[10px] tracking-[0.2em] font-bold uppercase">
+          <a href="#work" className="hover:text-[#bef264] transition-colors hidden md:block">Archive</a>
+          <a href={PROFILE.socials.x} target="_blank" className="hover:text-[#bef264] transition-colors">X.com</a>
+          <a href={PROFILE.socials.farcaster} target="_blank" className="hover:text-[#bef264] transition-colors">Farcaster</a>
+          <a href={PROFILE.socials.github} target="_blank" className="hover:text-[#bef264] transition-colors">GitHub</a>
         </div>
       </nav>
 
@@ -117,6 +119,28 @@ export default function App() {
         </motion.div>
       </section>
 
+      {/* Socials Matrix */}
+      <section className="px-6 lg:px-24 mb-32">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a href={PROFILE.socials.x} target="_blank" className="border border-white/10 p-8 flex flex-col items-center gap-4 hover:bg-[#bef264]/10 hover:border-[#bef264] transition-all group">
+            <Twitter size={32} className="group-hover:text-[#bef264]" />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Twitter / X</span>
+          </a>
+          <a href={PROFILE.socials.farcaster} target="_blank" className="border border-white/10 p-8 flex flex-col items-center gap-4 hover:bg-[#bef264]/10 hover:border-[#bef264] transition-all group">
+            <Radio size={32} className="group-hover:text-[#bef264]" />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Farcaster</span>
+          </a>
+          <a href={PROFILE.socials.github} target="_blank" className="border border-white/10 p-8 flex flex-col items-center gap-4 hover:bg-[#bef264]/10 hover:border-[#bef264] transition-all group">
+            <Github size={32} className="group-hover:text-[#bef264]" />
+            <span className="text-[10px] font-bold tracking-widest uppercase">GitHub</span>
+          </a>
+          <div className="border border-white/10 p-8 flex flex-col items-center justify-center gap-4 opacity-50 italic">
+            <Share2 size={32} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">More Soon</span>
+          </div>
+        </div>
+      </section>
+
       {/* Lab / Skills Section */}
       <section id="lab" className="py-32 px-6 lg:px-24 bg-white/5 backdrop-blur-3xl">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20">
@@ -144,6 +168,7 @@ export default function App() {
               <p>{">"} INITIALIZING ALPHA_FINDER ENGINE...</p>
               <p className="text-white">{">"} [STATUS] MULTIPLE ALPHA SIGNALS DETECTED.</p>
               <p>{">"} MODERATING DISCORD INSTANCES: 100% HEALTH.</p>
+              <p>{">"} SOCIAL PROTOCOLS LINKED: X, FARCASTER, GITHUB.</p>
             </div>
           </div>
         </div>
@@ -184,3 +209,4 @@ export default function App() {
     </div>
   );
 }
+
